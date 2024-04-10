@@ -7,15 +7,134 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+model Job {
+  id Int @id @default(autoincrement())
+  title String
+  description String
+
+  @@map("jobs")
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
-  username         String    @unique
-  email            String    @unique
-  passwordHash     String
-  userType         String
-  registrationDate DateTime  @default(now())
-  lastLoginDate    DateTime?
-  status           String
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  userType     UserType
+  registrationDate DateTime @default(now())
+  lastLoginDate   DateTime?
+  status       UserStatus
+  Employer     Employer?  @relation(fields: [employerId], references: [id])
+  JobSeeker    JobSeeker? @relation(fields: [jobSeekerId], references: [id])
+}
+
+enum UserType {
+  EMPLOYER
+  JOB_SEEKER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Employer {
+  id          Int     @id @default(autoincrement())
+  company     String
+  industry    String
+  location    String
+  website     String?
+  description String?
+  contactEmail String
+  contactPhone String
+  User         User    @relation(fields: [userId], references: [id])
+  userId       Int @unique
+  jobs         Job[]
+}
+
+model JobSeeker {
+  id             Int      @id @default(autoincrement())
+  fullName       String
+  dateOfBirth    DateTime
+  gender         String
+  address        String
+  phoneNumber    String
+  educationLevel String
+  resumeUrl      String
+  User           User     @relation(fields: [userId], references: [id])
+  userId         Int @unique
+  applications   Application[]
+}
+
+model Job {
+  id            Int       @id @default(autoincrement())
+  employer      Employer  @relation(fields: [employerId], references: [id])
+  employerId    Int
+  jobTitle      String
+  jobDescription String
+  location      String
+  salary        Float
+  employmentType EmploymentType
+  postingDate   DateTime  @default(now())
+  expiryDate    DateTime
+  status        JobStatus
+  applications  Application[]
+  skills        Skill[]   @relation("JobSkills")
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum JobStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
+}
+
+model Application {
+  id            Int      @id @default(autoincrement())
+  job           Job      @relation(fields: [jobId], references: [id])
+  jobId         Int
+  jobSeeker     JobSeeker @relation(fields: [jobSeekerId], references: [id])
+  jobSeekerId   Int
+  applicationDate DateTime @default(now())
+  status        ApplicationStatus
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  REJECTED
+  ACCEPTED
+}
+
+model Skill {
+  id        Int      @id @default(autoincrement())
+  name      String
+  jobs      Job[]    @relation("JobSkills")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  sender     User     @relation(fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User     @relation(fields: [receiverId], references: [id])
+  receiverId Int
+  subject    String
+  body       String
+  sendDate   DateTime @default(now())
+  readStatus MessageReadStatus @default(UNREAD)
+}
+
+enum MessageReadStatus {
+  READ
+  UNREAD
 }
